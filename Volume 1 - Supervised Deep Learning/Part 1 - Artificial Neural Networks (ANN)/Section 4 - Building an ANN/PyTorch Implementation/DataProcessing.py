@@ -1,7 +1,7 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 
 
 class DataProcessing():
@@ -52,6 +52,3 @@ class DataProcessing():
         data = self.scaling.transform(data)
 
         return data
-
-    
-    
