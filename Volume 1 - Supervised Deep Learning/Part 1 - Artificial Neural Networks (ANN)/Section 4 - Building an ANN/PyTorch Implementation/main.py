@@ -1,36 +1,39 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
+import torch as T
 
 from Agent import Agent
+from CustomDatasets import Test_Data, Train_Data
 from DataProcessing import DataProcessing
 
 file_name = 'data\Churn_Modelling.csv'
 
 data_processing = DataProcessing(file_name)
 
-X_train, X_test, y_train, y_test = data_processing.get_data(test_size=0.2)
-#print(y_test)
+X_train, X_test, y_train, y_test = data_processing.get_data(test_size=0.4)
+
+
+train_data = Train_Data(T.Tensor(X_train), T.tensor(y_train))
+test_data = Test_Data(T.tensor(X_test))
+
+params = {'batch_size':25, 'epochs':5}
 
 input_dims = len(X_train[0])
 classes = 1
-agent = Agent(input_dims, classes)
-loss = agent.learn(X_train, y_train, batch_size=32, epochs=500)
-preds = agent.evaluate(X_test)
 
-act_preds = []
+agent = Agent(input_dims, classes, lr=1e-3)
 
-for pred in preds:
-    if pred[0]>=0.5: act_preds.append(1)
-    else: act_preds.append(0)
+loss, acc = agent.learn(train_data, **params)
 
-act_preds = np.array(act_preds)
+y_pred = agent.evaluate(test_data)
 
-accuracy = (len(y_test) - np.count_nonzero(act_preds - y_test))/len(y_test)
-print(accuracy)
-
-cm = confusion_matrix(y_test, act_preds)
+cm = confusion_matrix(y_test, y_pred)
 print(cm)
 
-plt.plot(loss)
+print(classification_report(y_test, y_pred))
+
+
+plt.plot(loss, label="loss")
+plt.plot(acc, label="acc")
 plt.show()

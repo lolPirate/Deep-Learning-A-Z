@@ -1,7 +1,7 @@
 import numpy as np
 import torch as T
 from torch.autograd import Variable
-import torch.utils.data as data_utils
+from torch.utils.data import DataLoader
 
 from ANN import ANN
 
@@ -14,30 +14,54 @@ class Agent():
         self.ann = ANN(self.input_dims, self.classes, lr=lr)
 
     
-    def learn(self, X, y, batch_size=10, epochs=10):
-        self.ann.optimizer.zero_grad()
-        X = T.tensor(X).to(self.ann.device)
-        y = T.tensor(y, dtype=T.float).to(self.ann.device)
-        train = data_utils.TensorDataset(X, y)
-        train_loader = data_utils.DataLoader(train, batch_size=batch_size, shuffle=True)
-        average_loss = []
-        for ep in range(epochs):
-            loss_list = []
+    def learn(self, data, batch_size=10, epochs=10):
+        self.ann.train()
+        train_loader = DataLoader(dataset=data, batch_size=batch_size, shuffle=True)
+
+        all_loss = []
+        all_acc = []
+        
+        for ep in range(1, epochs+1):
+            epoch_loss = 0
+            epoch_accuracy = 0
             for x_batch, y_batch in train_loader:
-                #x_batch = X[beg:beg + batch_size, :]
-                #y_batch = y[beg:beg + batch_size]
-                y_pred = self.ann.forward(x_batch)
-                loss = self.ann.loss(y_pred, y_batch)
+                
+                x_batch, y_batch = x_batch.to(self.ann.device), y_batch.to(self.ann.device)
+                self.ann.optimizer.zero_grad()
+
+                y_pred = self.ann(x_batch)
+
+                loss = self.ann.loss(y_pred, y_batch.unsqueeze(1).type(T.float))
+                accuracy = self.accuracy(y_pred, y_batch.unsqueeze(1))
+
                 loss.backward()
                 self.ann.optimizer.step()
-                loss_list.append(loss.item())
-            average_loss.append(np.mean(loss_list))
-            print(f'Epoch:{ep}\t\tLoss:{np.mean(loss_list)}')
-        return average_loss
+
+                epoch_loss += loss.item()
+                epoch_accuracy += accuracy.item() 
+            
+            all_loss.append(epoch_loss/len(train_loader))
+            all_acc.append(epoch_accuracy/len(train_loader))
+            print(f'Epoch:{ep} | Epoch Loss:{epoch_loss/len(train_loader)} | Epoch Accuracy:{epoch_accuracy/len(train_loader)}')
+        return all_loss, all_acc
+
+    def accuracy(self, y_pred, y_test):
+        
+        y_pred = T.round(y_pred)
+        correct_sum = (y_pred == y_test).sum().float()
+
+        return correct_sum/y_test.shape[0]
+
     
     def evaluate(self, X):
-        X = T.tensor(X).to(self.ann.device)
-        
-        pred = self.ann.forward(X)
+        self.ann.eval()
+        test_loader = DataLoader(dataset=X, batch_size=1)
+        y_pred_list = []
+        with T.no_grad():
+            for x_batch in test_loader:
+                x_batch = x_batch.to(self.ann.device).type(T.float)
+                y_pred = self.ann(x_batch)
+                y_pred = T.round(y_pred)
+                y_pred_list.append(y_pred)
 
-        return pred
+        return [i.squeeze().tolist() for i in y_pred_list]
