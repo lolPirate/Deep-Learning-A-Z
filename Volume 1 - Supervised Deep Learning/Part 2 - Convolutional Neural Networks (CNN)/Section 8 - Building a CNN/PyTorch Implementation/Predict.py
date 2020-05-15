@@ -10,7 +10,7 @@ class Predict():
     def __init__(self, path_to_predict_folder):
         self.path = path_to_predict_folder
         self.cnn = CNN()
-        self.cnn.load_state_dict(T.load(r'./models/3conv'))
+        self.cnn.load_state_dict(T.load(r'./models/conv_epochs_100'))
         self.cnn.eval()
         self.transforms = transforms.Compose([transforms.Resize(
             (64, 64)), transforms.ToTensor(), transforms.Normalize([.5, .5, .5], [.2, .2, .2])])
@@ -27,8 +27,8 @@ class Predict():
         with T.no_grad():
             prediction = self.cnn(tensor)
             print(prediction)
-        fig = plt.figure()
-        imgplot = plt.imshow(img)
+        _ = plt.figure()
+        _ = plt.imshow(img)
         title = 'Dog' if T.round(prediction).item() == 1 else 'Cat'
         plt.title(title)
         #prediction_percent = round(abs(.5-prediction.item())*100/.5)
