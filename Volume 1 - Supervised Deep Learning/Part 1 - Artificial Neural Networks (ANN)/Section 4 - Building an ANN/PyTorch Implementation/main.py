@@ -11,13 +11,13 @@ file_name = 'data\Churn_Modelling.csv'
 
 data_processing = DataProcessing(file_name)
 
-X_train, X_test, y_train, y_test = data_processing.get_data(test_size=0.4)
+X_train, X_test, y_train, y_test = data_processing.get_data(test_size=0.2)
 
 
 train_data = Train_Data(T.Tensor(X_train), T.tensor(y_train))
 test_data = Test_Data(T.tensor(X_test))
 
-params = {'batch_size':25, 'epochs':5}
+params = {'batch_size':25, 'epochs':50}
 
 input_dims = len(X_train[0])
 classes = 1
@@ -34,6 +34,7 @@ print(cm)
 print(classification_report(y_test, y_pred))
 
 
-plt.plot(loss, label="loss")
-plt.plot(acc, label="acc")
+plt.plot(loss, label="loss", color='r')
+plt.plot(acc, label="acc", color='g')
+plt.legend()
 plt.show()
