@@ -71,3 +71,39 @@ test_set_matrix[test_set_matrix == 0] = -1
 test_set_matrix[test_set_matrix == 1] = 0
 test_set_matrix[test_set_matrix == 2] = 0
 test_set_matrix[test_set_matrix >= 3] = 1
+
+# Architecture of Reduced Boltzman Machine
+
+
+class RBM():
+
+    def __init__(self, nv, nh):
+        self.nv = nv
+        self.nh = nh
+        self.W = T.randn(self.nh, self.nv)
+        # Probability of hidden node given visible node bias
+        self.phvb = T.randn(1, self.nh)
+        # Probability of visible node given hidden node bias
+        self.pvhb = T.randn(1, self.nv)
+
+    def sample_h(self, x):
+        wx = T.mm(x, self.W.t())
+        activation = wx + self.phvb.expand_as(wx)
+        p_h_given_v = F.sigmoid(activation)
+        return p_h_given_v, T.bernoulli(p_h_given_v)
+
+    def sample_v(self, y):
+        wy = T.mm(y, self.W)
+        activation = wy + self.pvhb.expand_as(wy)
+        p_v_given_h = F.sigmoid(activation)
+        return p_v_given_h, T.bernoulli(p_v_given_h)
+    
+    def train(self, v0, vk, ph0, phk):
+        self.W += T.mm(v0.t(), ph0) - T.mm(vk.t(), phk)
+        self.pvhb += T.sum((v0 - vk), 0)
+        self.phvb += T.sum((ph0 - phk), 0)
+
+
+
+    
+
